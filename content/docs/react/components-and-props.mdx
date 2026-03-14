@@ -1,0 +1,119 @@
+---
+title: Components and Props
+description: Building blocks and how to pass data between them
+---
+
+# Components and Props
+
+## What is a component?
+
+A component is a **function that returns JSX**. That's it.
+
+```tsx
+function Button() {
+  return <button>Click me</button>;
+}
+```
+
+Components can be used like HTML tags:
+```tsx
+function App() {
+  return (
+    <div>
+      <Button />
+      <Button />
+      <Button />
+    </div>
+  );
+}
+```
+
+## Props
+
+Props (short for properties) are how you pass data **into** a component from its parent:
+
+```tsx
+// Define what props the component accepts
+interface ButtonProps {
+  label: string;
+  onClick: () => void;
+  variant?: 'primary' | 'secondary';
+  disabled?: boolean;
+}
+
+function Button({ label, onClick, variant = 'primary', disabled = false }: ButtonProps) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={variant === 'primary' ? 'btn-primary' : 'btn-secondary'}
+    >
+      {label}
+    </button>
+  );
+}
+
+// Usage
+<Button label="Submit" onClick={() => console.log('clicked')} />
+<Button label="Cancel" onClick={() => console.log('cancelled')} variant="secondary" />
+```
+
+## Children
+
+`children` is a special prop — it's the JSX you put between opening and closing tags:
+
+```tsx
+function Card({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="card">
+      {children}
+    </div>
+  );
+}
+
+// Usage
+<Card>
+  <h2>My Card Title</h2>
+  <p>Some content inside the card.</p>
+</Card>
+```
+
+## Composing components
+
+Real UIs are composed of many small components:
+
+```tsx
+function Avatar({ src, name }: { src: string; name: string }) {
+  return <img src={src} alt={name} className="w-10 h-10 rounded-full" />;
+}
+
+function UserCard({ user }: { user: { name: string; email: string; avatar: string } }) {
+  return (
+    <div className="flex items-center gap-3 p-4 border rounded-lg">
+      <Avatar src={user.avatar} name={user.name} />
+      <div>
+        <p className="font-semibold">{user.name}</p>
+        <p className="text-sm text-gray-500">{user.email}</p>
+      </div>
+    </div>
+  );
+}
+
+function UserList({ users }: { users: User[] }) {
+  return (
+    <div className="space-y-2">
+      {users.map(user => (
+        <UserCard key={user.id} user={user} />
+      ))}
+    </div>
+  );
+}
+```
+
+<Callout type="info">
+  Notice the `key` prop on `UserCard`. When rendering a list, React needs a unique `key` for each item to track which items change, are added, or removed. Always use a stable unique ID, not the array index.
+</Callout>
+
+## Props are read-only
+
+A component must never modify its own props. If you need to change something, use state (next section).

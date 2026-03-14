@@ -1,0 +1,100 @@
+---
+title: useEffect and Side Effects
+description: Running code when things change — the right way
+---
+
+# useEffect and Side Effects
+
+A **side effect** is anything that reaches outside of a component — fetching data, setting a timer, subscribing to an event, or manipulating the DOM directly. React provides `useEffect` to run these safely.
+
+## Basic syntax
+
+```tsx
+import { useEffect } from 'react';
+
+useEffect(() => {
+  // This runs after every render
+  document.title = `Count: ${count}`;
+});
+
+useEffect(() => {
+  // This runs once when the component mounts
+  console.log('Component mounted');
+}, []); // empty dependency array
+
+useEffect(() => {
+  // This runs when `userId` changes
+  fetchUser(userId);
+}, [userId]); // dependency array
+```
+
+## Fetching data
+
+```tsx
+function UserProfile({ userId }: { userId: string }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false; // prevents setting state after unmount
+
+    async function fetchUser() {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/users/${userId}`);
+        const data = await response.json();
+        if (!cancelled) {
+          setUser(data);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError('Failed to load user');
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    fetchUser();
+
+    return () => {
+      cancelled = true; // cleanup function
+    };
+  }, [userId]);
+
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>{error}</p>;
+  if (!user) return null;
+
+  return <div>{user.name}</div>;
+}
+```
+
+## Cleanup
+
+The function returned from `useEffect` runs when the component unmounts or before the next effect:
+
+```tsx
+useEffect(() => {
+  const timer = setInterval(() => {
+    setTime(new Date());
+  }, 1000);
+
+  return () => clearInterval(timer); // cleanup!
+}, []);
+
+useEffect(() => {
+  const handler = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') onClose();
+  };
+  window.addEventListener('keydown', handler);
+  return () => window.removeEventListener('keydown', handler); // cleanup!
+}, [onClose]);
+```
+
+<Callout type="tip">
+  In real apps, you'll often reach for a data-fetching library like **TanStack Query** instead of raw `useEffect` for data fetching. It handles loading states, caching, refetching, and more. But understanding `useEffect` first is essential.
+</Callout>

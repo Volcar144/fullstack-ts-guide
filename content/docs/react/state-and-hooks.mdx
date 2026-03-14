@@ -1,0 +1,119 @@
+---
+title: State and Hooks
+description: useState, how React re-renders, and the rules of hooks
+---
+
+# State and Hooks
+
+## What is state?
+
+State is data that **belongs to a component and can change over time**, causing the component to re-render.
+
+Props are passed from outside. State lives inside.
+
+## useState
+
+```tsx
+import { useState } from 'react';
+
+function Counter() {
+  // [currentValue, functionToUpdateIt] = useState(initialValue)
+  const [count, setCount] = useState(0);
+
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <button onClick={() => setCount(count + 1)}>+</button>
+      <button onClick={() => setCount(count - 1)}>-</button>
+      <button onClick={() => setCount(0)}>Reset</button>
+    </div>
+  );
+}
+```
+
+When `setCount` is called, React re-renders the component with the new value. The UI stays in sync with the data automatically.
+
+## Updating state correctly
+
+```tsx
+// ❌ Wrong — mutating state directly (React won't re-render)
+const [items, setItems] = useState(['a', 'b', 'c']);
+items.push('d'); // This mutates the array, React doesn't see the change
+
+// ✅ Correct — create a new array
+setItems([...items, 'd']);
+
+// ❌ Wrong — reading stale state in rapid updates
+setCount(count + 1);
+setCount(count + 1); // both read the same old `count`
+
+// ✅ Correct — use the updater function form
+setCount(prev => prev + 1);
+setCount(prev => prev + 1); // each call gets the latest value
+```
+
+## Complex state
+
+```tsx
+interface FormState {
+  name: string;
+  email: string;
+  isSubmitting: boolean;
+}
+
+function ContactForm() {
+  const [form, setForm] = useState<FormState>({
+    name: '',
+    email: '',
+    isSubmitting: false,
+  });
+
+  const handleChange = (field: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm(prev => ({ ...prev, [field]: e.target.value }));
+  };
+
+  return (
+    <form>
+      <input value={form.name} onChange={handleChange('name')} />
+      <input value={form.email} onChange={handleChange('email')} />
+    </form>
+  );
+}
+```
+
+## What are hooks?
+
+Hooks are special React functions that start with `use`. They let you add React features (state, effects, context) to functional components.
+
+**The rules of hooks:**
+1. Only call hooks **at the top level** of a component (not inside loops, conditionals, or nested functions)
+2. Only call hooks **inside React components** (or other custom hooks)
+
+```tsx
+// ❌ Wrong
+function Component() {
+  if (someCondition) {
+    const [value, setValue] = useState(''); // conditional hook call!
+  }
+}
+
+// ✅ Correct
+function Component() {
+  const [value, setValue] = useState(''); // always at top level
+  if (someCondition) {
+    // use value here
+  }
+}
+```
+
+## Common hooks overview
+
+| Hook | Purpose |
+|------|---------|
+| `useState` | Local component state |
+| `useEffect` | Side effects (fetch, subscriptions) |
+| `useContext` | Read context values |
+| `useRef` | Mutable reference, DOM access |
+| `useMemo` | Memoize expensive calculations |
+| `useCallback` | Memoize functions |
+| `useReducer` | Complex state logic |
