@@ -1,7 +1,4 @@
-import { defineDocs, defineConfig } from 'fumadocs-mdx/config';
-
-export const { docs, meta } = defineDocs({
-  dir: 'content/docs',
-});
-
-export default defineConfig();
+// This file is intentionally empty.
+// The project uses next-mdx-remote instead of fumadocs-mdx.
+// MDX files are loaded via lib/docs.ts using gray-matter + next-mdx-remote/rsc.
+export {};
