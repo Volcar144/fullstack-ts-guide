@@ -1,0 +1,120 @@
+---
+title: Sentry
+description: Error tracking and monitoring for production apps
+---
+
+# Sentry
+
+Sentry is an **error monitoring** platform. When something breaks in production, Sentry captures the error with full context — the stack trace, the user, the browser, what they were doing — and sends you an alert.
+
+## Why you need error monitoring
+
+Without Sentry:
+- A user encounters a crash
+- They may not report it
+- You find out days later from a complaint
+- You have no idea what caused it
+
+With Sentry:
+- The error is captured the instant it happens
+- You get an alert with full context
+- You can reproduce and fix it immediately
+
+## Installation in Next.js
+
+```bash
+npx @sentry/wizard@latest -i nextjs
+```
+
+The wizard creates the config files automatically. You'll need to create a free account at [sentry.io](https://sentry.io) and get a DSN.
+
+## Manual setup
+
+```ts
+// sentry.client.config.ts
+import * as Sentry from '@sentry/nextjs';
+
+Sentry.init({
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  tracesSampleRate: 1.0,     // 100% of transactions for performance
+  replaysSessionSampleRate: 0.1,  // 10% of sessions
+  replaysOnErrorSampleRate: 1.0,  // 100% of sessions with errors
+  integrations: [
+    Sentry.replayIntegration(),
+  ],
+});
+```
+
+```ts
+// sentry.server.config.ts
+import * as Sentry from '@sentry/nextjs';
+
+Sentry.init({
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  tracesSampleRate: 1.0,
+});
+```
+
+## Capturing errors manually
+
+```ts
+import * as Sentry from '@sentry/nextjs';
+
+// Capture an exception
+try {
+  await riskyOperation();
+} catch (error) {
+  Sentry.captureException(error);
+  throw error;
+}
+
+// Add context to errors
+Sentry.setUser({ id: user.id, email: user.email });
+Sentry.setTag('feature', 'checkout');
+Sentry.addBreadcrumb({
+  message: 'User clicked checkout',
+  level: 'info',
+});
+
+// Capture a message (not an error)
+Sentry.captureMessage('Payment provider returned unexpected status', 'warning');
+```
+
+## Error boundaries in React
+
+```tsx
+import * as Sentry from '@sentry/nextjs';
+
+export function MyErrorBoundary({ children }: { children: React.ReactNode }) {
+  return (
+    <Sentry.ErrorBoundary
+      fallback={({ error }) => (
+        <div className="p-6 text-center">
+          <h2 className="text-xl font-bold mb-2">Something went wrong</h2>
+          <p className="text-gray-500">Our team has been notified.</p>
+        </div>
+      )}
+    >
+      {children}
+    </Sentry.ErrorBoundary>
+  );
+}
+```
+
+## Performance monitoring
+
+Sentry also tracks **performance** — how long pages take to load, which API calls are slow, database query durations.
+
+```ts
+// Wrap slow operations in a transaction/span
+const result = await Sentry.startSpan(
+  { name: 'process-payment', op: 'function' },
+  async () => {
+    return await paymentProvider.charge(amount);
+  }
+);
+```
+
+<Callout type="tip">
+  Sentry's free tier is generous for personal projects and small teams. Set up Sentry before you launch — you want to catch bugs from your first users, not find out about them from a review.
+</Callout>

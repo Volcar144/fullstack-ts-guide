@@ -1,0 +1,121 @@
+---
+title: Prisma ORM
+description: Type-safe database access for TypeScript
+---
+
+# Prisma ORM
+
+Prisma is an **ORM** (Object-Relational Mapper) that lets you interact with your database using TypeScript. Instead of writing raw SQL, you write type-safe TypeScript code.
+
+## Why Prisma?
+
+```ts
+// Without Prisma — raw SQL, no type safety
+const result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+// result is `any` — TypeScript can't help you here
+
+// With Prisma — fully typed, autocompleted
+const user = await prisma.user.findUnique({ where: { email } });
+// user is User | null, fully typed based on your schema
+```
+
+## Installation
+
+```bash
+npm install prisma @prisma/client
+npx prisma init
+```
+
+## Defining the schema
+
+`prisma/schema.prisma` is your database definition:
+
+```prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  name      String?
+  posts     Post[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  title     String
+  content   String?
+  published Boolean  @default(false)
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  String
+  createdAt DateTime @default(now())
+}
+```
+
+Apply the schema:
+```bash
+npx prisma db push   # for development
+npx prisma migrate dev --name init  # for production migrations
+```
+
+## CRUD operations
+
+```ts
+const prisma = new PrismaClient();
+
+// CREATE
+const user = await prisma.user.create({
+  data: {
+    email: 'alice@example.com',
+    name: 'Alice',
+  },
+});
+
+// READ
+const user = await prisma.user.findUnique({ where: { id: '123' } });
+const users = await prisma.user.findMany({
+  where: { name: { contains: 'Alice' } },
+  orderBy: { createdAt: 'desc' },
+  take: 10,  // limit
+  skip: 20,  // offset / pagination
+});
+
+// UPDATE
+const updated = await prisma.user.update({
+  where: { id: '123' },
+  data: { name: 'Alice Smith' },
+});
+
+// DELETE
+await prisma.user.delete({ where: { id: '123' } });
+
+// Relations — fetch user with their posts
+const userWithPosts = await prisma.user.findUnique({
+  where: { id: '123' },
+  include: { posts: true },
+});
+```
+
+## Prisma Studio
+
+```bash
+npx prisma studio
+```
+
+Opens a visual browser-based interface for viewing and editing your database. Great for development.
+
+## Supported databases
+
+PostgreSQL, MySQL, SQLite, SQL Server, MongoDB, CockroachDB
+
+<Callout type="tip">
+  For production, use **PostgreSQL** on a provider like **Supabase** (free tier available) or **Neon** (serverless, free tier). For local development, SQLite is the simplest option — no setup required.
+</Callout>

@@ -1,0 +1,138 @@
+---
+title: PostHog
+description: Product analytics, feature flags, and session recording
+---
+
+# PostHog
+
+PostHog is an **open-source analytics platform**. It tracks how users use your product, lets you run A/B tests with feature flags, and records sessions so you can watch exactly what a user did.
+
+## What PostHog gives you
+
+- **Event tracking** — which buttons are clicked, which pages are visited
+- **User identification** — track the journey of individual users
+- **Funnels** — where do users drop off in your sign-up flow?
+- **Feature flags** — roll out features to a percentage of users
+- **Session recordings** — watch real user sessions (privacy-configurable)
+- **A/B testing** — test different versions of a feature
+
+## Installation in Next.js
+
+```bash
+npm install posthog-js
+```
+
+## Setup
+
+```tsx
+// app/providers.tsx
+'use client';
+
+import posthog from 'posthog-js';
+import { PostHogProvider } from 'posthog-js/react';
+import { useEffect } from 'react';
+
+export function PHProvider({ children }: { children: React.ReactNode }) {
+  useEffect(() => {
+    posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
+      api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST ?? 'https://app.posthog.com',
+      capture_pageview: false, // we'll capture these manually
+    });
+  }, []);
+
+  return <PostHogProvider client={posthog}>{children}</PostHogProvider>;
+}
+```
+
+```tsx
+// app/layout.tsx
+import { PHProvider } from './providers';
+
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        <PHProvider>{children}</PHProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+## Capturing events
+
+```tsx
+'use client';
+import { usePostHog } from 'posthog-js/react';
+
+export function CheckoutButton({ product }: { product: Product }) {
+  const posthog = usePostHog();
+
+  const handleClick = () => {
+    posthog.capture('add_to_cart', {
+      product_id: product.id,
+      product_name: product.name,
+      price: product.price,
+    });
+  };
+
+  return <button onClick={handleClick}>Add to Cart</button>;
+}
+```
+
+## Identifying users
+
+```ts
+// After sign in, identify the user
+posthog.identify(user.id, {
+  email: user.email,
+  name: user.name,
+  plan: user.plan,
+});
+
+// After sign out, reset
+posthog.reset();
+```
+
+## Feature flags
+
+```tsx
+'use client';
+import { useFeatureFlagEnabled } from 'posthog-js/react';
+
+export function NewDashboard() {
+  const showNewDashboard = useFeatureFlagEnabled('new-dashboard-v2');
+
+  if (showNewDashboard) {
+    return <NewDashboardUI />;
+  }
+
+  return <OldDashboardUI />;
+}
+```
+
+You can roll this flag out to 10% of users, then 50%, then 100% — or instantly roll it back if something's wrong.
+
+## Server-side tracking
+
+```ts
+import { PostHog } from 'posthog-node';
+
+const client = new PostHog(process.env.POSTHOG_KEY!, {
+  host: 'https://app.posthog.com',
+});
+
+// In your API route
+export async function POST(request: Request) {
+  // ... process payment
+  client.capture({
+    distinctId: userId,
+    event: 'payment_completed',
+    properties: { amount, currency },
+  });
+}
+```
+
+<Callout type="info">
+  PostHog is open-source and can be self-hosted for free. Their cloud offering has a generous free tier (1 million events/month). It's one of the best tools for understanding your users without sacrificing their privacy.
+</Callout>
