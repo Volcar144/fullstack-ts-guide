@@ -1,0 +1,78 @@
+---
+title: Layouts and Pages
+description: How Next.js nests layouts and what special files do
+---
+
+# Layouts and Pages
+
+## Layouts
+
+A `layout.tsx` file wraps all pages in its directory and below it. The layout **doesn't re-render** when navigating between pages inside it — only the page content changes.
+
+```tsx
+// app/layout.tsx — the root layout, wraps everything
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <nav>{/* global navigation */}</nav>
+        {children}
+        <footer>{/* global footer */}</footer>
+      </body>
+    </html>
+  );
+}
+```
+
+```tsx
+// app/dashboard/layout.tsx — wraps all dashboard pages
+export default function DashboardLayout({ children }) {
+  return (
+    <div className="flex">
+      <aside className="w-64">{/* sidebar */}</aside>
+      <main className="flex-1">{children}</main>
+    </div>
+  );
+}
+```
+
+## Special files
+
+| File | Purpose |
+|------|---------|
+| `page.tsx` | The UI for a route |
+| `layout.tsx` | Shared UI that wraps pages |
+| `loading.tsx` | Loading state (shown while page loads) |
+| `error.tsx` | Error UI for this segment |
+| `not-found.tsx` | 404 UI |
+| `route.ts` | API endpoint |
+
+```tsx
+// app/dashboard/loading.tsx
+export default function Loading() {
+  return (
+    <div className="flex items-center justify-center h-64">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
+    </div>
+  );
+}
+```
+
+## Metadata
+
+```tsx
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Dashboard — My App',
+  description: 'Manage your tasks',
+  openGraph: {
+    title: 'Dashboard',
+    images: ['/og-image.png'],
+  },
+};
+
+export default function DashboardPage() {
+  return <div>Dashboard</div>;
+}
+```

@@ -1,0 +1,112 @@
+---
+title: Data Fetching
+description: How to load data in Next.js the right way
+---
+
+# Data Fetching
+
+## Server Components (recommended)
+
+In Server Components, you can fetch data directly — just use `async/await`:
+
+```tsx
+// This is a Server Component
+export default async function PostsPage() {
+  // Option 1: Direct database query
+  const posts = await db.post.findMany();
+
+  // Option 2: Fetch from an API
+  const response = await fetch('https://api.example.com/posts', {
+    next: { revalidate: 60 }, // cache for 60 seconds
+  });
+  const posts = await response.json();
+
+  return (
+    <ul>
+      {posts.map(post => <li key={post.id}>{post.title}</li>)}
+    </ul>
+  );
+}
+```
+
+## Cache control
+
+```ts
+// Cache forever (static)
+fetch(url, { cache: 'force-cache' });
+
+// Never cache (always fresh)
+fetch(url, { cache: 'no-store' });
+
+// Revalidate every 60 seconds
+fetch(url, { next: { revalidate: 60 } });
+
+// Revalidate when a tag is invalidated
+fetch(url, { next: { tags: ['posts'] } });
+```
+
+## Route-level caching
+
+```ts
+// app/posts/page.tsx
+
+// Make the whole page static (like a CDN)
+export const revalidate = 3600; // rebuild every hour
+
+// Make it always dynamic
+export const dynamic = 'force-dynamic';
+```
+
+## Loading states with Suspense
+
+```tsx
+import { Suspense } from 'react';
+
+async function SlowComponent() {
+  const data = await fetchSomethingSlow();
+  return <div>{data.title}</div>;
+}
+
+export default function Page() {
+  return (
+    <div>
+      <h1>My Page</h1>
+      <Suspense fallback={<div>Loading content...</div>}>
+        <SlowComponent />
+      </Suspense>
+    </div>
+  );
+}
+```
+
+The page renders immediately and `SlowComponent` streams in when it's ready.
+
+## Server Actions
+
+Server Actions let you run server code directly from forms and buttons:
+
+```tsx
+// app/tasks/actions.ts
+'use server';
+
+import { db } from '@/lib/db';
+import { revalidatePath } from 'next/cache';
+
+export async function createTask(formData: FormData) {
+  const title = formData.get('title') as string;
+  await db.task.create({ data: { title } });
+  revalidatePath('/tasks'); // refresh the page data
+}
+```
+
+```tsx
+// In a form
+import { createTask } from './actions';
+
+<form action={createTask}>
+  <input name="title" />
+  <button type="submit">Add Task</button>
+</form>
+```
+
+No API route needed — the form submits directly to your server function.
