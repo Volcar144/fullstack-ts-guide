@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --playground-bg: #0f172a;
+}
+
+.playground-preview {
+  min-height: 200px;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 0.5rem;
+}
