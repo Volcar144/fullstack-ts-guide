@@ -2,13 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --playground-bg: #0f172a;
-}
+/* Syntax highlighting via highlight.js */
+@import 'highlight.js/styles/github.css';
 
-.playground-preview {
-  min-height: 200px;
-  padding: 1.5rem;
-  background: white;
-  border-radius: 0.5rem;
+.dark .hljs {
+  background: #1e293b;
+  color: #e2e8f0;
 }
