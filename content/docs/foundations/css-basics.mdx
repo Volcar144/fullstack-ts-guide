@@ -1,0 +1,167 @@
+---
+title: CSS Basics
+description: How to style web pages — selectors, the box model, flexbox and grid
+---
+
+# CSS Basics
+
+CSS (**Cascading Style Sheets**) controls how HTML elements look — colours, sizes, spacing, layout, fonts, animations.
+
+## How to add CSS
+
+```html
+<!-- 1. External stylesheet (recommended) -->
+<link rel="stylesheet" href="styles.css" />
+
+<!-- 2. Inline styles (avoid for anything beyond quick tests) -->
+<p style="color: red; font-size: 18px;">Red text</p>
+
+<!-- 3. Style tag (fine for small demos) -->
+<style>
+  p { color: blue; }
+</style>
+```
+
+## Selectors
+
+```css
+/* Element */
+p { color: gray; }
+
+/* Class (reusable, prefix with .) */
+.card { background: white; }
+
+/* ID (unique per page, prefix with #) */
+#main-header { font-size: 2rem; }
+
+/* Descendant */
+.card h2 { margin-bottom: 8px; }
+
+/* Pseudo-classes */
+a:hover { color: blue; }
+button:disabled { opacity: 0.5; }
+input:focus { outline: 2px solid blue; }
+
+/* Pseudo-elements */
+p::first-line { font-weight: bold; }
+```
+
+## The Box Model
+
+Every element is a rectangular box:
+
+```
++---------------------------+
+|         margin            |
+|  +---------------------+ |
+|  |      border         | |
+|  |  +---------------+  | |
+|  |  |   padding     |  | |
+|  |  |  +---------+  |  | |
+|  |  |  | content |  |  | |
+|  |  |  +---------+  |  | |
+|  |  +---------------+  | |
+|  +---------------------+ |
++---------------------------+
+```
+
+```css
+.box {
+  width: 300px;
+  height: 200px;
+  padding: 20px;         /* space inside border */
+  border: 2px solid #ccc;
+  margin: 16px;          /* space outside border */
+
+  /* by default width doesn't include padding/border — fix this: */
+  box-sizing: border-box; /* now width = content + padding + border */
+}
+```
+
+> **Tip:** Always add `box-sizing: border-box` globally. Tailwind does this automatically.
+
+## Flexbox
+
+Flex makes laying things out in a row or column easy:
+
+```css
+.container {
+  display: flex;
+  flex-direction: row;         /* row (default) or column */
+  justify-content: space-between; /* horizontal alignment */
+  align-items: center;         /* vertical alignment */
+  gap: 16px;                   /* space between children */
+  flex-wrap: wrap;             /* allow wrapping to next line */
+}
+
+.child {
+  flex: 1;   /* grow to fill available space */
+  flex: 0 0 200px; /* fixed 200px, don't grow or shrink */
+}
+```
+
+## Grid
+
+Grid is for two-dimensional layouts:
+
+```css
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 3 equal columns */
+  grid-template-columns: 250px 1fr;      /* sidebar + main */
+  gap: 24px;
+}
+
+/* Span multiple columns */
+.featured {
+  grid-column: span 2;
+}
+```
+
+## Responsive design
+
+Media queries let you apply styles at different screen sizes:
+
+```css
+/* Mobile first: base styles apply to all sizes */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr; /* 1 column on mobile */
+}
+
+/* Tablet and up */
+@media (min-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Desktop and up */
+@media (min-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+```
+
+## CSS Variables
+
+```css
+:root {
+  --color-primary: #3b82f6;
+  --color-text: #111827;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --radius: 8px;
+}
+
+.button {
+  background-color: var(--color-primary);
+  border-radius: var(--radius);
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+```
+
+<Callout type="info">
+  In this stack you'll use **Tailwind CSS** instead of writing raw CSS files. But understanding CSS first makes Tailwind class names make immediate sense — `p-4` is `padding: 1rem`, `flex` is `display: flex`, and so on.
+</Callout>

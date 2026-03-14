@@ -1,0 +1,129 @@
+---
+title: useRef, useMemo and useCallback
+description: Accessing DOM elements directly, and avoiding unnecessary re-renders
+---
+
+# useRef, useMemo and useCallback
+
+## useRef
+
+`useRef` gives you a mutable box that persists across renders **without causing a re-render when changed**. It has two main uses:
+
+### 1. Access a DOM element directly
+
+```tsx
+import { useRef, useEffect } from 'react';
+
+function SearchBox() {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus the input when the component mounts
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  return <input ref={inputRef} placeholder="Search..." />;
+}
+```
+
+### 2. Store a mutable value that doesn't trigger re-renders
+
+```tsx
+function Stopwatch() {
+  const [time, setTime] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const start = () => {
+    intervalRef.current = setInterval(() => {
+      setTime(t => t + 1);
+    }, 1000);
+  };
+
+  const stop = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+  };
+
+  return (
+    <div>
+      <p>{time}s</p>
+      <button onClick={start}>Start</button>
+      <button onClick={stop}>Stop</button>
+    </div>
+  );
+}
+```
+
+## useMemo
+
+`useMemo` caches the result of an expensive calculation, only recomputing when its dependencies change:
+
+```tsx
+import { useMemo, useState } from 'react';
+
+function ProductList({ products, searchQuery }: Props) {
+  // Without useMemo: filters the whole list on EVERY render
+  // With useMemo: only re-filters when products or searchQuery changes
+  const filteredProducts = useMemo(() => {
+    return products.filter(p =>
+      p.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [products, searchQuery]);
+
+  return (
+    <ul>
+      {filteredProducts.map(p => <li key={p.id}>{p.name}</li>)}
+    </ul>
+  );
+}
+```
+
+<Callout type="tip">
+  Don't reach for `useMemo` on every calculation. Only use it when the calculation is genuinely slow (filtering/sorting thousands of items, complex math). Premature memoisation makes code harder to read without any real benefit.
+</Callout>
+
+## useCallback
+
+`useCallback` caches a function reference so it doesn't get recreated on every render. This matters when you pass a function to a child component wrapped in `React.memo`:
+
+```tsx
+import { useCallback, memo } from 'react';
+
+// This child only re-renders if its props change
+const ExpensiveChild = memo(function ExpensiveChild(
+  { onAction }: { onAction: () => void }
+) {
+  return <button onClick={onAction}>Do something</button>;
+});
+
+function Parent() {
+  const [count, setCount] = useState(0);
+
+  // Without useCallback: new function reference every render
+  //   → ExpensiveChild re-renders every time Parent renders
+  // With useCallback: same reference until deps change
+  //   → ExpensiveChild only re-renders when necessary
+  const handleAction = useCallback(() => {
+    console.log('action!');
+  }, []); // no deps = created once
+
+  return (
+    <div>
+      <p>{count}</p>
+      <button onClick={() => setCount(c => c + 1)}>Increment</button>
+      <ExpensiveChild onAction={handleAction} />
+    </div>
+  );
+}
+```
+
+## When to actually use these
+
+| Hook | Use when |
+|------|----------|
+| `useRef` | DOM access, storing timers/intervals, tracking previous values |
+| `useMemo` | Filtering/sorting large arrays, expensive derived data |
+| `useCallback` | Functions passed to memoised child components |
+
+Start without them. Add them when you measure a performance problem.

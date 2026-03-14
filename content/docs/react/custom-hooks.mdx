@@ -1,0 +1,142 @@
+---
+title: Custom Hooks
+description: Extracting reusable logic from components into your own hooks
+---
+
+# Custom Hooks
+
+Custom hooks let you extract component logic into reusable functions. Any function that starts with `use` and calls other hooks is a custom hook.
+
+## Why custom hooks?
+
+Imagine you have the same data-fetching pattern repeated across five components:
+
+```tsx
+// In every component that fetches data:
+const [data, setData] = useState(null);
+const [loading, setLoading] = useState(true);
+const [error, setError] = useState(null);
+
+useEffect(() => {
+  fetch('/api/something')
+    .then(r => r.json())
+    .then(setData)
+    .catch(setError)
+    .finally(() => setLoading(false));
+}, []);
+```
+
+A custom hook cleans this up:
+
+```tsx
+// hooks/useFetch.ts
+function useFetch<T>(url: string) {
+  const [data, setData] = useState<T | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+
+    fetch(url)
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json() as Promise<T>;
+      })
+      .then(d => { if (!cancelled) setData(d); })
+      .catch(e => { if (!cancelled) setError(e.message); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+
+    return () => { cancelled = true; };
+  }, [url]);
+
+  return { data, loading, error };
+}
+
+// Usage — clean!
+function UserProfile({ id }: { id: string }) {
+  const { data: user, loading, error } = useFetch<User>(`/api/users/${id}`);
+
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>Error: {error}</p>;
+  if (!user) return null;
+
+  return <h1>{user.name}</h1>;
+}
+```
+
+## More practical examples
+
+### useLocalStorage
+
+```tsx
+function useLocalStorage<T>(key: string, initialValue: T) {
+  const [value, setValue] = useState<T>(() => {
+    try {
+      const item = localStorage.getItem(key);
+      return item ? JSON.parse(item) : initialValue;
+    } catch {
+      return initialValue;
+    }
+  });
+
+  const setStoredValue = (newValue: T) => {
+    setValue(newValue);
+    localStorage.setItem(key, JSON.stringify(newValue));
+  };
+
+  return [value, setStoredValue] as const;
+}
+
+// Usage
+const [theme, setTheme] = useLocalStorage<'light' | 'dark'>('theme', 'light');
+```
+
+### useDebounce
+
+```tsx
+function useDebounce<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = useState(value);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+
+  return debounced;
+}
+
+// Usage — search only fires 300ms after user stops typing
+function Search() {
+  const [query, setQuery] = useState('');
+  const debouncedQuery = useDebounce(query, 300);
+
+  useEffect(() => {
+    if (debouncedQuery) searchApi(debouncedQuery);
+  }, [debouncedQuery]);
+
+  return <input value={query} onChange={e => setQuery(e.target.value)} />;
+}
+```
+
+### useMediaQuery
+
+```tsx
+function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    setMatches(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setMatches(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, [query]);
+
+  return matches;
+}
+
+// Usage
+const isMobile = useMediaQuery('(max-width: 768px)');
+```

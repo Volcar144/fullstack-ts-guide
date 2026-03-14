@@ -1,0 +1,118 @@
+---
+title: Setting Up Your Dev Environment
+description: Node.js, VS Code, extensions, and getting your machine ready
+---
+
+# Setting Up Your Dev Environment
+
+Before writing any code you need a few tools installed. This takes about 10 minutes.
+
+## 1. Install Node.js
+
+Node.js lets you run JavaScript outside the browser, and comes with `npm`.
+
+Download the **LTS** version from [nodejs.org](https://nodejs.org). 
+Alternatively, use a version manager (recommended for serious development):
+
+```bash
+# macOS / Linux — install fnm (Fast Node Manager)
+curl -fsSL https://fnm.vercel.app/install | bash
+fnm install --lts
+fnm use lts-latest
+
+# Windows — use winget
+winget install Schniz.fnm
+fnm install --lts
+```
+
+Verify the install:
+```bash
+node --version  # should print v20.x.x or higher
+npm --version   # should print 10.x.x or higher
+```
+
+## 2. Install VS Code
+
+Download from [code.visualstudio.com](https://code.visualstudio.com). It's free and by far the most popular editor for web development.
+
+## 3. Essential VS Code extensions
+
+Open VS Code and install these from the Extensions panel (`Ctrl+Shift+X`):
+
+| Extension | Why |
+|-----------|-----|
+| **ESLint** | Shows code quality errors inline |
+| **Prettier** | Auto-formats your code on save |
+| **Tailwind CSS IntelliSense** | Autocomplete for Tailwind classes |
+| **TypeScript Error Translator** | Turns cryptic TS errors into plain English |
+| **Auto Rename Tag** | Renames closing JSX tag when you rename the opening one |
+| **GitLens** | See git blame and history inline |
+
+## 4. Configure Prettier (auto-format on save)
+
+Create `.vscode/settings.json` in your project:
+
+```json
+{
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  }
+}
+```
+
+Create `.prettierrc` at the project root:
+```json
+{
+  "semi": true,
+  "singleQuote": true,
+  "tabWidth": 2,
+  "trailingComma": "all",
+  "printWidth": 100
+}
+```
+
+## 5. Install Git
+
+Git is version control — it tracks changes to your code.
+
+```bash
+# macOS (via Homebrew)
+brew install git
+
+# Windows
+winget install Git.Git
+
+# Ubuntu/Debian
+sudo apt install git
+```
+
+Configure your identity:
+```bash
+git config --global user.name "Your Name"
+git config --global user.email "you@example.com"
+```
+
+## 6. Create your first Next.js project
+
+```bash
+npx create-next-app@latest my-app --typescript --tailwind --app --eslint
+cd my-app
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) — you should see the default Next.js page.
+
+## Useful terminal commands
+
+```bash
+ls          # list files (macOS/Linux)
+dir         # list files (Windows)
+cd folder   # change directory
+cd ..       # go up one directory
+mkdir name  # create a folder
+rm file     # delete a file (careful!)
+pwd         # print current directory
+clear       # clear the terminal
+```
