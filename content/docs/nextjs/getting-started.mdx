@@ -1,0 +1,66 @@
+---
+title: Getting Started with Next.js
+description: Create your first Next.js app with TypeScript and Tailwind
+---
+
+# Getting Started with Next.js
+
+Next.js is a React framework that adds **routing, server-side rendering, API routes, and optimizations** on top of React.
+
+## Creating a new project
+
+```bash
+npx create-next-app@latest my-app
+```
+
+You'll be asked a series of questions:
+```
+✔ Would you like to use TypeScript? → Yes
+✔ Would you like to use ESLint? → Yes
+✔ Would you like to use Tailwind CSS? → Yes
+✔ Would you like to use the `src/` directory? → No (optional)
+✔ Would you like to use App Router? → Yes
+✔ Would you like to customize the default import alias? → No
+```
+
+Then:
+```bash
+cd my-app
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) and you'll see your app running.
+
+## Project structure
+
+```
+my-app/
+├── app/                    ← All your pages and layouts live here
+│   ├── layout.tsx          ← Root layout (wraps everything)
+│   ├── page.tsx            ← The home page (/)
+│   └── globals.css         ← Global styles
+├── public/                 ← Static files (images, fonts)
+├── components/             ← Reusable React components
+├── lib/                    ← Utilities and helpers
+├── next.config.mjs         ← Next.js configuration
+├── tailwind.config.ts      ← Tailwind configuration
+└── package.json
+```
+
+## The app directory
+
+Next.js 13+ uses the **App Router**. Everything in the `app/` directory maps to URL routes:
+
+```
+app/
+├── page.tsx          → /
+├── about/
+│   └── page.tsx      → /about
+├── blog/
+│   ├── page.tsx      → /blog
+│   └── [slug]/
+│       └── page.tsx  → /blog/any-slug-here
+└── api/
+    └── users/
+        └── route.ts  → /api/users (API endpoint)
+```

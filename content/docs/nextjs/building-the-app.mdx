@@ -1,0 +1,215 @@
+---
+title: Building the App
+description: A full walkthrough of building a real Next.js app from scratch
+---
+
+# Building the App
+
+Let's build a **Task Manager** app. It'll have authentication, a database, a clean UI, and real features. We'll connect every concept covered so far.
+
+## What we're building
+
+- A task management app (think simple Jira/Trello)
+- Users can sign up and log in
+- Create, complete, and delete tasks
+- Tasks belong to the logged-in user
+
+## Setup
+
+```bash
+npx create-next-app@latest taskr --typescript --tailwind --app
+cd taskr
+npm install prisma @prisma/client better-auth zod
+```
+
+## Step 1: Database schema with Prisma
+
+```bash
+npx prisma init --datasource-provider sqlite
+```
+
+Edit `prisma/schema.prisma`:
+```prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  tasks     Task[]
+  sessions  Session[]
+  createdAt DateTime @default(now())
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  token     String   @unique
+  expiresAt DateTime
+}
+
+model Task {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  completed   Boolean  @default(false)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+```
+
+```bash
+npx prisma db push
+```
+
+## Step 2: Database client
+
+```ts
+// lib/db.ts
+import { PrismaClient } from '@prisma/client';
+
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
+
+export const db = globalForPrisma.prisma ?? new PrismaClient();
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db;
+```
+
+## Step 3: Task API routes
+
+```ts
+// app/api/tasks/route.ts
+import { NextResponse } from 'next/server';
+import { db } from '@/lib/db';
+import { auth } from '@/lib/auth';
+import { z } from 'zod';
+
+const CreateTaskSchema = z.object({
+  title: z.string().min(1).max(200),
+  description: z.string().optional(),
+});
+
+export async function GET(request: Request) {
+  const session = await auth.getSession(request);
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const tasks = await db.task.findMany({
+    where: { userId: session.user.id },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  return NextResponse.json(tasks);
+}
+
+export async function POST(request: Request) {
+  const session = await auth.getSession(request);
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const body = await request.json();
+  const { title, description } = CreateTaskSchema.parse(body);
+
+  const task = await db.task.create({
+    data: { title, description, userId: session.user.id },
+  });
+
+  return NextResponse.json(task, { status: 201 });
+}
+```
+
+## Step 4: The tasks page
+
+```tsx
+// app/dashboard/page.tsx
+import { auth } from '@/lib/auth';
+import { db } from '@/lib/db';
+import { redirect } from 'next/navigation';
+import { TaskList } from '@/components/task-list';
+import { CreateTaskForm } from '@/components/create-task-form';
+
+export default async function DashboardPage() {
+  const session = await auth.getSession();
+  if (!session) redirect('/login');
+
+  const tasks = await db.task.findMany({
+    where: { userId: session.user.id },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  return (
+    <main className="max-w-2xl mx-auto py-12 px-4">
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-3xl font-bold">My Tasks</h1>
+        <span className="text-sm text-gray-500">
+          Logged in as {session.user.email}
+        </span>
+      </div>
+
+      <CreateTaskForm />
+      <TaskList tasks={tasks} />
+    </main>
+  );
+}
+```
+
+## Step 5: Client components for interactivity
+
+```tsx
+// components/create-task-form.tsx
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+
+export function CreateTaskForm() {
+  const [title, setTitle] = useState('');
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) return;
+
+    setLoading(true);
+    await fetch('/api/tasks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title }),
+    });
+    setTitle('');
+    setLoading(false);
+    router.refresh(); // re-fetch server components
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="flex gap-2 mb-6">
+      <input
+        value={title}
+        onChange={e => setTitle(e.target.value)}
+        placeholder="Add a new task..."
+        className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+      <button
+        type="submit"
+        disabled={loading || !title.trim()}
+        className="px-5 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 disabled:opacity-50 transition-colors"
+      >
+        {loading ? 'Adding...' : 'Add'}
+      </button>
+    </form>
+  );
+}
+```
+
+<Callout type="tip">
+  Notice how the data flow works: the Server Component fetches data and passes it to components, while Client Components handle user interactions and use `router.refresh()` to re-fetch fresh data without a full page reload.
+</Callout>

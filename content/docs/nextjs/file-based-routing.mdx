@@ -1,0 +1,89 @@
+---
+title: File-Based Routing
+description: How Next.js turns files into URLs automatically
+---
+
+# File-Based Routing
+
+One of Next.js's best features is that **the file structure is the routing**. You don't configure routes — you just create files.
+
+## Static routes
+
+```
+app/page.tsx              → /
+app/about/page.tsx        → /about
+app/contact/page.tsx      → /contact
+app/blog/page.tsx         → /blog
+```
+
+## Dynamic routes
+
+Square brackets create dynamic segments:
+
+```
+app/blog/[slug]/page.tsx  → /blog/hello-world
+                             /blog/my-post
+                             /blog/anything
+```
+
+```tsx
+// app/blog/[slug]/page.tsx
+export default function BlogPost({ params }: { params: { slug: string } }) {
+  return <h1>Post: {params.slug}</h1>;
+}
+```
+
+## Catch-all routes
+
+```
+app/docs/[...slug]/page.tsx  → /docs/a
+                                /docs/a/b
+                                /docs/a/b/c
+```
+
+## Route groups
+
+Parentheses create groups that **don't affect the URL**:
+
+```
+app/
+├── (marketing)/
+│   ├── page.tsx          → /
+│   └── about/page.tsx    → /about
+└── (app)/
+    ├── dashboard/page.tsx → /dashboard
+    └── settings/page.tsx  → /settings
+```
+
+This is useful for sharing different layouts between groups of pages.
+
+## API Routes
+
+```tsx
+// app/api/users/route.ts
+import { NextResponse } from 'next/server';
+
+export async function GET() {
+  const users = await db.user.findMany();
+  return NextResponse.json(users);
+}
+
+export async function POST(request: Request) {
+  const body = await request.json();
+  const user = await db.user.create({ data: body });
+  return NextResponse.json(user, { status: 201 });
+}
+```
+
+## The Link component
+
+Use `<Link>` instead of `<a>` for navigation:
+
+```tsx
+import Link from 'next/link';
+
+<Link href="/about">About</Link>
+<Link href={`/blog/${post.slug}`}>{post.title}</Link>
+```
+
+Link prefetches pages when they enter the viewport, making navigation feel instant.

@@ -1,0 +1,92 @@
+---
+title: Server vs Client Components
+description: Understanding Next.js's most important concept
+---
+
+# Server vs Client Components
+
+This is the most important concept to understand in modern Next.js.
+
+## Server Components (default)
+
+By default, all components in the App Router are **Server Components**. They run on the server and their code never reaches the browser.
+
+```tsx
+// This is a Server Component by default (no 'use client' directive)
+export default async function ProductPage({ params }: { params: { id: string } }) {
+  // Direct database access — this runs on the server
+  const product = await db.product.findUnique({ where: { id: params.id } });
+
+  return (
+    <div>
+      <h1>{product.name}</h1>
+      <p>${product.price}</p>
+    </div>
+  );
+}
+```
+
+**Benefits of Server Components:**
+- Zero JavaScript sent to the browser for that component
+- Direct database and filesystem access
+- API keys and secrets are never exposed to the client
+- Faster initial page load
+
+**Limitations:**
+- No `useState`, `useEffect`, or any hooks
+- No event handlers (`onClick`, etc.)
+- No browser APIs
+
+## Client Components
+
+Add `'use client'` at the top to make a Client Component:
+
+```tsx
+'use client';
+
+import { useState } from 'react';
+
+export function AddToCart({ productId }: { productId: string }) {
+  const [added, setAdded] = useState(false);
+
+  return (
+    <button
+      onClick={() => setAdded(true)}
+      className={added ? 'bg-green-500' : 'bg-blue-500'}
+    >
+      {added ? 'Added!' : 'Add to Cart'}
+    </button>
+  );
+}
+```
+
+## The pattern: Server wraps Client
+
+The right architecture is to make most of your tree Server Components, and only use Client Components for interactive leaves:
+
+```tsx
+// page.tsx — Server Component
+export default async function ProductPage({ params }) {
+  const product = await db.product.findUnique(...);
+  const reviews = await db.review.findMany(...);
+
+  return (
+    <div>
+      {/* Server Components */}
+      <ProductDetails product={product} />
+      <ReviewList reviews={reviews} />
+
+      {/* Client Component for interactivity */}
+      <AddToCart productId={product.id} />
+    </div>
+  );
+}
+```
+
+| Feature | Server | Client |
+|---------|--------|--------|
+| `useState`, `useEffect` | ❌ | ✅ |
+| `onClick`, `onChange` | ❌ | ✅ |
+| Database access | ✅ | ❌ |
+| `async/await` (component level) | ✅ | ❌ |
+| Sent to browser | ❌ | ✅ |
