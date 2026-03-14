@@ -1,0 +1,133 @@
+---
+title: HTML Basics
+description: The skeleton of every web page
+---
+
+# HTML Basics
+
+HTML stands for **HyperText Markup Language**. It's the skeleton of every web page — it defines the *structure* and *content*, but not the style or behaviour.
+
+## What is a tag?
+
+HTML is made of **tags**. Most tags come in pairs: an opening tag and a closing tag.
+
+```html
+<p>This is a paragraph.</p>
+```
+
+The `<p>` is the opening tag, `</p>` is the closing tag, and "This is a paragraph." is the content.
+
+## A minimal HTML document
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>My First Page</title>
+  </head>
+  <body>
+    <h1>Hello, World!</h1>
+    <p>Welcome to my website.</p>
+  </body>
+</html>
+```
+
+- `<!DOCTYPE html>` — tells the browser this is an HTML5 document
+- `<html>` — the root element, everything lives inside it
+- `<head>` — metadata the browser needs (not shown on the page)
+- `<body>` — everything the user actually sees
+
+## Essential tags
+
+### Headings
+```html
+<h1>Biggest heading</h1>
+<h2>Second level</h2>
+<h3>Third level</h3>
+<!-- h4, h5, h6 exist too -->
+```
+
+### Text
+```html
+<p>A paragraph of text.</p>
+<strong>Bold text</strong>
+<em>Italic text</em>
+<span>Inline wrapper (no visual effect by default)</span>
+```
+
+### Links
+```html
+<a href="https://example.com">Click here</a>
+<a href="/about">About page (relative link)</a>
+```
+
+### Images
+```html
+<img src="/photo.jpg" alt="A description of the image" />
+```
+The `alt` attribute is important for accessibility and is shown when the image fails to load.
+
+### Lists
+```html
+<!-- Unordered (bullet points) -->
+<ul>
+  <li>Apples</li>
+  <li>Bananas</li>
+</ul>
+
+<!-- Ordered (numbered) -->
+<ol>
+  <li>First step</li>
+  <li>Second step</li>
+</ol>
+```
+
+### Divs and Sections
+```html
+<div>A generic block-level container</div>
+<section>A thematic section of content</section>
+<article>Self-contained content (a blog post, card)</article>
+<nav>Navigation links</nav>
+<header>Page or section header</header>
+<footer>Page or section footer</footer>
+<main>The main content of the page</main>
+```
+
+## Attributes
+
+Attributes add extra information to a tag:
+```html
+<a href="https://example.com" target="_blank" rel="noopener">
+  Open in new tab
+</a>
+
+<input type="text" placeholder="Enter your name" id="name-input" />
+
+<div class="card" id="main-card">
+  Content
+</div>
+```
+
+- `class` — used by CSS and JavaScript to target elements
+- `id` — a unique identifier for a specific element
+- `href`, `src`, `type` — tag-specific attributes
+
+## Forms
+
+Forms let users input data:
+```html
+<form action="/submit" method="POST">
+  <label for="email">Email:</label>
+  <input type="email" id="email" name="email" required />
+
+  <label for="message">Message:</label>
+  <textarea id="message" name="message"></textarea>
+
+  <button type="submit">Send</button>
+</form>
+```
+
+<Callout type="info">
+  In React, you won't write raw HTML like this. React uses JSX, which looks very similar but has some differences (like `className` instead of `class`). Understanding raw HTML first makes JSX make much more sense.
+</Callout>

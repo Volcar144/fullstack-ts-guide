@@ -1,0 +1,187 @@
+---
+title: JavaScript Basics
+description: The programming language of the web
+---
+
+# JavaScript Basics
+
+JavaScript (JS) is the programming language that makes web pages *do things* — respond to clicks, fetch data, update content without reloading.
+
+## Variables
+
+Variables store data.
+
+```js
+// let - can be reassigned
+let name = 'Alice';
+name = 'Bob'; // this is fine
+
+// const - cannot be reassigned (use this by default)
+const age = 25;
+// age = 26; // Error!
+
+// var - old, avoid it
+var old = true;
+```
+
+**Rule of thumb:** use `const` by default, `let` when you need to reassign.
+
+## Data Types
+
+```js
+// String
+const greeting = 'Hello';
+const name = "World";
+const template = `Hello, ${name}!`; // template literal
+
+// Number
+const count = 42;
+const price = 9.99;
+
+// Boolean
+const isLoggedIn = true;
+const hasError = false;
+
+// null (intentional absence of value)
+const nothing = null;
+
+// undefined (variable declared but not assigned)
+let something;
+console.log(something); // undefined
+
+// Array
+const fruits = ['apple', 'banana', 'cherry'];
+
+// Object
+const user = {
+  name: 'Alice',
+  age: 25,
+  isAdmin: false,
+};
+```
+
+## Functions
+
+```js
+// Function declaration
+function greet(name) {
+  return `Hello, ${name}!`;
+}
+
+// Arrow function (modern, preferred)
+const greet = (name) => {
+  return `Hello, ${name}!`;
+};
+
+// Short arrow function (implicit return)
+const greet = (name) => `Hello, ${name}!`;
+
+console.log(greet('Alice')); // "Hello, Alice!"
+```
+
+## Conditionals
+
+```js
+const score = 75;
+
+if (score >= 90) {
+  console.log('A');
+} else if (score >= 70) {
+  console.log('B'); // this runs
+} else {
+  console.log('C');
+}
+
+// Ternary operator (one-liner if/else)
+const result = score >= 70 ? 'Pass' : 'Fail';
+console.log(result); // 'Pass'
+```
+
+## Arrays
+
+```js
+const numbers = [1, 2, 3, 4, 5];
+
+// Access by index (starts at 0)
+console.log(numbers[0]); // 1
+
+// length
+console.log(numbers.length); // 5
+
+// push — add to end
+numbers.push(6); // [1,2,3,4,5,6]
+
+// pop — remove from end
+numbers.pop(); // [1,2,3,4,5]
+
+// map — transform every item (returns new array)
+const doubled = numbers.map(n => n * 2); // [2,4,6,8,10]
+
+// filter — keep items matching condition
+const evens = numbers.filter(n => n % 2 === 0); // [2,4]
+
+// find — first item matching condition
+const firstBig = numbers.find(n => n > 3); // 4
+
+// forEach — loop without returning
+numbers.forEach(n => console.log(n));
+```
+
+## Objects
+
+```js
+const user = {
+  name: 'Alice',
+  age: 25,
+};
+
+// Access
+console.log(user.name); // 'Alice'
+console.log(user['age']); // 25
+
+// Modify
+user.age = 26;
+
+// Add new property
+user.email = 'alice@example.com';
+
+// Destructuring (very common in React)
+const { name, age } = user;
+console.log(name); // 'Alice'
+
+// Spread (copy + modify)
+const updatedUser = { ...user, age: 27 };
+```
+
+## Async / Await
+
+Fetching data from an API is asynchronous — you have to *wait* for it.
+
+```js
+// Without async/await (older, .then chaining)
+fetch('https://api.example.com/users')
+  .then(response => response.json())
+  .then(data => console.log(data));
+
+// With async/await (modern, cleaner)
+async function getUsers() {
+  const response = await fetch('https://api.example.com/users');
+  const data = await response.json();
+  console.log(data);
+}
+
+// Always handle errors
+async function getUsers() {
+  try {
+    const response = await fetch('https://api.example.com/users');
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Failed to fetch users:', error);
+  }
+}
+```
+
+<Callout type="tip">
+  The three most important array methods to learn are `map`, `filter`, and `find`. You'll use them constantly in React.
+</Callout>

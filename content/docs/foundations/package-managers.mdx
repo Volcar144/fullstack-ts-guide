@@ -1,0 +1,92 @@
+---
+title: Package Managers
+description: npm, pnpm, bun — what are they and which should you use?
+---
+
+# Package Managers
+
+A **package manager** lets you install, update, and manage third-party code ("packages" or "dependencies") that your project needs.
+
+## What is a package?
+
+A package is a reusable piece of code someone else wrote and published. For example:
+- `react` — the React library
+- `tailwindcss` — Tailwind CSS
+- `zod` — a data validation library
+
+Instead of writing this code yourself, you install it with a package manager.
+
+## The main options
+
+### npm
+Comes installed with Node.js. The original and most widely used.
+
+```bash
+npm install react
+npm install -D typescript  # -D means devDependency
+npm run dev
+```
+
+### pnpm
+Faster and more disk-efficient than npm. Uses a shared package store so you don't re-download the same package for every project.
+
+```bash
+pnpm install react
+pnpm add -D typescript
+pnpm dev
+```
+
+### Bun
+A brand-new JavaScript runtime and package manager. Very fast.
+
+```bash
+bun add react
+bun add -d typescript
+bun dev
+```
+
+### Yarn
+An older alternative to npm with similar speed. Less commonly recommended for new projects now.
+
+## Which one should you use?
+
+| Manager | Recommendation |
+|---------|---------------|
+| **npm** | Default choice, always available, fine for learning |
+| **pnpm** | ✅ Best for professional projects — fast, disk efficient |
+| **Bun** | Great for performance, still maturing in some edge cases |
+| **Yarn** | No strong reason to choose over pnpm today |
+
+**Recommendation: start with `npm`, switch to `pnpm` once you're comfortable.**
+
+## package.json
+
+Every project has a `package.json` file that lists its dependencies:
+
+```json
+{
+  "name": "my-app",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "next": "^15.0.0",
+    "react": "^18.3.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "tailwindcss": "^3.4.0"
+  }
+}
+```
+
+- **dependencies** — packages needed to run the app in production
+- **devDependencies** — packages only needed during development (TypeScript, linters, etc.)
+- **scripts** — shortcuts for common commands
+
+## The lock file
+
+When you install packages, a lock file is created (`package-lock.json`, `pnpm-lock.yaml`, or `bun.lockb`). **Always commit this file to git.** It ensures everyone on your team installs the exact same versions.

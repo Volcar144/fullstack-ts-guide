@@ -1,0 +1,173 @@
+---
+title: TypeScript Basics
+description: JavaScript with superpowers — catch bugs before they happen
+---
+
+# TypeScript Basics
+
+TypeScript is JavaScript with **types**. It's compiled down to regular JavaScript before running in the browser, but during development it catches entire categories of bugs before you even run your code.
+
+## Why TypeScript?
+
+```js
+// JavaScript — no idea what 'user' contains
+function greet(user) {
+  return `Hello, ${user.nane}`; // Typo! .nane instead of .name
+  // JS: no error, outputs "Hello, undefined"
+}
+
+// TypeScript — the typo is caught immediately
+function greet(user: { name: string }) {
+  return `Hello, ${user.nane}`; // TypeScript Error: Property 'nane' does not exist
+}
+```
+
+## Basic Types
+
+```ts
+// Primitives
+const name: string = 'Alice';
+const age: number = 25;
+const isAdmin: boolean = true;
+
+// Arrays
+const scores: number[] = [95, 87, 92];
+const names: string[] = ['Alice', 'Bob'];
+
+// null and undefined
+const nothing: null = null;
+let maybeString: string | null = null;
+maybeString = 'hello'; // now a string
+```
+
+In practice, TypeScript infers most types automatically:
+```ts
+const name = 'Alice'; // TypeScript already knows this is a string
+const age = 25;       // TypeScript already knows this is a number
+```
+
+## Interfaces and Types
+
+These let you define the *shape* of an object:
+
+```ts
+// Interface (use for objects)
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  isAdmin: boolean;
+  createdAt: Date;
+}
+
+// Type alias (more flexible)
+type Status = 'active' | 'inactive' | 'banned';
+
+type UserWithStatus = User & {
+  status: Status;
+};
+```
+
+Using an interface:
+```ts
+function sendEmail(user: User) {
+  console.log(`Sending email to ${user.email}`);
+}
+
+const alice: User = {
+  id: 1,
+  name: 'Alice',
+  email: 'alice@example.com',
+  isAdmin: false,
+  createdAt: new Date(),
+};
+
+sendEmail(alice); // works
+sendEmail({ name: 'Bob' }); // Error: missing id, email, isAdmin, createdAt
+```
+
+## Optional Properties
+
+```ts
+interface Product {
+  id: number;
+  name: string;
+  description?: string; // optional — may be undefined
+  price: number;
+}
+
+const item: Product = {
+  id: 1,
+  name: 'Widget',
+  price: 9.99,
+  // description is optional, so we can omit it
+};
+```
+
+## Function Types
+
+```ts
+// Typed parameters and return type
+function add(a: number, b: number): number {
+  return a + b;
+}
+
+// Arrow function
+const multiply = (a: number, b: number): number => a * b;
+
+// A function that returns nothing
+function logMessage(message: string): void {
+  console.log(message);
+}
+
+// Optional parameter
+function greet(name: string, greeting?: string): string {
+  return `${greeting ?? 'Hello'}, ${name}!`;
+}
+```
+
+## Generics
+
+Generics let you write code that works with multiple types:
+
+```ts
+// Without generics — only works with number
+function firstItem(arr: number[]): number {
+  return arr[0];
+}
+
+// With generics — works with any type
+function firstItem<T>(arr: T[]): T {
+  return arr[0];
+}
+
+const first = firstItem([1, 2, 3]);         // first is number
+const name = firstItem(['Alice', 'Bob']);   // name is string
+```
+
+You'll see generics everywhere in React (e.g. `useState<string>('')`).
+
+## Union Types
+
+```ts
+// A value can be one of several types
+type ID = string | number;
+
+function getUser(id: ID) {
+  if (typeof id === 'string') {
+    // TypeScript knows id is a string here
+    return db.findBySlug(id);
+  } else {
+    // TypeScript knows id is a number here
+    return db.findById(id);
+  }
+}
+
+// String literal unions (like enums)
+type Direction = 'north' | 'south' | 'east' | 'west';
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'destructive';
+```
+
+<Callout type="info">
+  You don't need to type everything. TypeScript is smart about inference. Focus on typing **function parameters**, **return types**, and **shared data structures** like your `User` or `Product` types.
+</Callout>

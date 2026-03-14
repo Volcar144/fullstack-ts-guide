@@ -1,0 +1,72 @@
+---
+title: Type Safety
+description: What it means, why it matters, and how TypeScript delivers it
+---
+
+# Type Safety
+
+Type safety means the programming language (or a tool on top of it) ensures that values are only used in ways that are valid for their type — and catches mistakes at **compile time** (before you run the code) rather than **runtime** (when a user hits the bug).
+
+## The problem without type safety
+
+```js
+// JavaScript
+function calculateTotal(price, quantity) {
+  return price * quantity;
+}
+
+calculateTotal(10, 2);        // 20 ✓
+calculateTotal('10', 2);     // '1010' — JS silently concatenated!
+calculateTotal(10, '2');     // 20 — JS coerced the string to number
+calculateTotal(10, 'two');   // NaN — No error thrown, just silent garbage
+```
+
+This works fine in development, but in production a user input of `"two"` breaks your invoice system — and you find out from a bug report.
+
+## The solution with TypeScript
+
+```ts
+function calculateTotal(price: number, quantity: number): number {
+  return price * quantity;
+}
+
+calculateTotal(10, 2);       // ✓
+calculateTotal('10', 2);    // Error: Argument of type 'string' not assignable to 'number'
+calculateTotal(10, 'two');  // Error: caught before you even save the file
+```
+
+## Runtime validation with Zod
+
+TypeScript only checks types at compile time. When data comes from outside your app (API responses, form inputs, URL params), TypeScript can't check it at runtime. This is where **Zod** comes in.
+
+```ts
+import { z } from 'zod';
+
+const UserSchema = z.object({
+  id: z.number(),
+  name: z.string().min(1),
+  email: z.string().email(),
+  age: z.number().min(0).max(120).optional(),
+});
+
+type User = z.infer<typeof UserSchema>; // auto-generates the TypeScript type!
+
+// Validate data from an API
+const apiResponse = await fetch('/api/user').then(r => r.json());
+const user = UserSchema.parse(apiResponse);
+// If the data doesn't match, Zod throws a descriptive error
+// If it does match, `user` is fully typed
+```
+
+## Why this matters in practice
+
+| Scenario | Without types | With TypeScript + Zod |
+|----------|---------------|----------------------|
+| Rename a field | Breaks silently | Error on every usage |
+| API returns wrong shape | Runtime crash | Caught at the boundary |
+| Refactor a function | Hope tests cover it | Compiler shows all callers |
+| Onboard a teammate | Read all the code | Types are the documentation |
+
+<Callout type="tip">
+  Think of types as **automated documentation that the compiler enforces**. They tell you and your editor what a function expects and what it returns — no guessing.
+</Callout>
