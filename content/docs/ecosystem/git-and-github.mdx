@@ -1,0 +1,133 @@
+---
+title: Git and GitHub
+description: Version control basics — commits, branches, pull requests and working with a team
+---
+
+# Git and GitHub
+
+Git is version control: it tracks every change to your code. GitHub is a website that hosts your Git repositories and adds collaboration features.
+
+## The core workflow
+
+```bash
+# Start: clone a repo
+git clone https://github.com/you/my-app
+cd my-app
+
+# See what's changed
+git status
+git diff
+
+# Stage changes
+git add .              # stage everything
+git add src/index.ts   # stage a specific file
+
+# Commit
+git commit -m "feat: add user profile page"
+
+# Push to GitHub
+git push
+```
+
+## Branches
+
+Branches let you work on a feature without touching the main codebase:
+
+```bash
+# Create and switch to a new branch
+git checkout -b feat/user-profile
+# or (modern syntax)
+git switch -c feat/user-profile
+
+# See all branches
+git branch
+
+# Switch to an existing branch
+git switch main
+
+# Merge a branch into main
+git switch main
+git merge feat/user-profile
+
+# Delete a branch after merging
+git branch -d feat/user-profile
+```
+
+## Conventional commits
+
+A consistent commit message format makes history readable:
+
+```
+type(scope): description
+
+feat: add login page
+fix: correct email validation
+docs: update README with setup steps
+refactor: extract auth logic into hook
+style: format with prettier
+test: add unit tests for calculateTotal
+chore: update dependencies
+```
+
+## The pull request workflow
+
+This is how professional teams work:
+
+1. **Branch** off `main` for your feature: `git switch -c feat/dark-mode`
+2. **Commit** your changes with clear messages
+3. **Push** the branch: `git push -u origin feat/dark-mode`
+4. **Open a Pull Request** on GitHub
+5. Teammate **reviews** the code and leaves comments
+6. You **address feedback** with more commits
+7. PR is **merged** into `main`
+8. Branch is deleted
+
+## Handling merge conflicts
+
+A conflict happens when two people edited the same line. Git marks the conflict:
+
+```
+<<<<<<< HEAD
+const greeting = 'Hello';
+=======
+const greeting = 'Hi';
+>>>>>>> feat/update-greeting
+```
+
+Edit the file to keep what you want, remove the markers, then:
+```bash
+git add .
+git commit -m "resolve merge conflict in greeting"
+```
+
+## .gitignore
+
+Prevents sensitive or unnecessary files from being committed:
+
+```bash
+# .gitignore
+node_modules/
+.env.local
+.env*.local
+.next/
+dist/
+*.log
+.DS_Store
+```
+
+Generate one at [gitignore.io](https://gitignore.io) or let `create-next-app` create it automatically.
+
+## Useful commands
+
+```bash
+git log --oneline     # compact history
+git stash             # temporarily shelve changes
+git stash pop         # restore stashed changes
+git reset HEAD~1      # undo last commit (keep changes)
+git revert <sha>      # undo a commit safely (makes a new commit)
+git pull --rebase     # pull and replay your commits on top
+```
+
+<Callout type="info">
+  **GitHub Desktop** is a great visual Git client if the command line feels overwhelming at first. It shows diffs visually and handles the most common operations with a few clicks.
+</Callout>

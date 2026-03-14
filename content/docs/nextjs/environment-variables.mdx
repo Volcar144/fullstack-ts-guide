@@ -1,0 +1,100 @@
+---
+title: Environment Variables
+description: Secrets, config, and the difference between server and client env vars
+---
+
+# Environment Variables
+
+Environment variables store sensitive values (API keys, database URLs) and config that changes between environments (development vs production).
+
+## The .env files
+
+```bash
+# .env.local — local development only, NEVER commit to git
+DATABASE_URL="postgresql://user:password@localhost:5432/mydb"
+BETTER_AUTH_SECRET="a-random-secret-string-at-least-32-chars"
+GITHUB_CLIENT_ID="your-github-oauth-app-id"
+GITHUB_CLIENT_SECRET="your-github-oauth-secret"
+
+# Public variable — visible in the browser
+NEXT_PUBLIC_POSTHOG_KEY="phc_xxx"
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+```
+
+```bash
+# .env.example — DO commit this, it shows teammates what vars are needed
+DATABASE_URL=""
+BETTER_AUTH_SECRET=""
+GITHUB_CLIENT_ID=""
+GITHUB_CLIENT_SECRET=""
+NEXT_PUBLIC_POSTHOG_KEY=""
+```
+
+Always add `.env.local` to `.gitignore`:
+```bash
+# .gitignore
+.env.local
+.env*.local
+```
+
+## Server vs Client variables
+
+| Prefix | Available in | Example |
+|--------|--------------|---------|
+| (none) | Server only | `DATABASE_URL` |
+| `NEXT_PUBLIC_` | Server + Browser | `NEXT_PUBLIC_POSTHOG_KEY` |
+
+Never put secrets (database passwords, OAuth secrets) in `NEXT_PUBLIC_` variables. They'll be bundled into your JavaScript and visible to anyone.
+
+## Accessing env vars
+
+```ts
+// Server component or API route
+const dbUrl = process.env.DATABASE_URL; // string | undefined
+
+// With type safety — throw if missing
+const secret = process.env.BETTER_AUTH_SECRET!; // non-null assertion
+
+// Better: validate at startup with a lib like @t3-oss/env-nextjs
+```
+
+## Validating env vars with @t3-oss/env-nextjs
+
+```bash
+npm install @t3-oss/env-nextjs zod
+```
+
+```ts
+// lib/env.ts
+import { createEnv } from '@t3-oss/env-nextjs';
+import { z } from 'zod';
+
+export const env = createEnv({
+  server: {
+    DATABASE_URL: z.string().url(),
+    BETTER_AUTH_SECRET: z.string().min(32),
+    GITHUB_CLIENT_ID: z.string(),
+    GITHUB_CLIENT_SECRET: z.string(),
+  },
+  client: {
+    NEXT_PUBLIC_POSTHOG_KEY: z.string(),
+    NEXT_PUBLIC_APP_URL: z.string().url(),
+  },
+  runtimeEnv: {
+    DATABASE_URL: process.env.DATABASE_URL,
+    BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
+    GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
+    GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
+    NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+  },
+});
+
+// Usage — fully typed and throws on missing vars at build time
+import { env } from '@/lib/env';
+const dbUrl = env.DATABASE_URL; // string, never undefined
+```
+
+## Setting env vars on Vercel
+
+In your Vercel dashboard: **Project → Settings → Environment Variables**. Add each variable for Production, Preview, and Development environments as needed.

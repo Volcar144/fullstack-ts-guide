@@ -1,0 +1,99 @@
+---
+title: Deployment
+description: Taking your Next.js app from localhost to the internet with Vercel
+---
+
+# Deployment
+
+Vercel is the company that built Next.js, and deploying there is the smoothest experience. The free tier is generous and more than enough for personal projects.
+
+## Deploying to Vercel
+
+### Option 1: Vercel CLI (fastest)
+
+```bash
+npm install -g vercel
+vercel
+```
+
+Follow the prompts. Vercel detects Next.js automatically.
+
+### Option 2: GitHub integration (recommended for real projects)
+
+1. Push your code to GitHub
+2. Go to [vercel.com](https://vercel.com) and sign up with GitHub
+3. Click **New Project** and import your repository
+4. Add your environment variables under **Settings → Environment Variables**
+5. Click **Deploy**
+
+From now on, every push to `main` automatically deploys. Every pull request gets its own **preview URL**.
+
+## Setting up a production database
+
+For production you need a hosted PostgreSQL database:
+
+### Option A: Neon (recommended — free tier, serverless)
+
+1. Create an account at [neon.tech](https://neon.tech)
+2. Create a new database
+3. Copy the connection string
+4. Add to Vercel as `DATABASE_URL`
+
+```bash
+# Run migrations against production DB
+npx prisma migrate deploy
+```
+
+### Option B: Supabase
+
+1. Create an account at [supabase.com](https://supabase.com)
+2. Create a new project
+3. Go to **Settings → Database** and copy the connection string
+4. Use the **Session mode** (port 5432) connection string for Prisma
+
+## Running Prisma migrations in CI/CD
+
+Add a build step to `package.json` that runs migrations before building:
+
+```json
+{
+  "scripts": {
+    "build": "prisma migrate deploy && next build",
+    "postinstall": "prisma generate"
+  }
+}
+```
+
+## Custom domains
+
+1. In your Vercel project: **Settings → Domains**
+2. Add your domain (e.g. `myapp.com`)
+3. Copy the DNS records Vercel provides
+4. Add them to your domain registrar (Namecheap, Cloudflare, etc.)
+5. Wait for DNS propagation (a few minutes to a few hours)
+
+## Environment variables checklist
+
+Before going live, make sure these are set in Vercel:
+
+- `DATABASE_URL` — production database connection string
+- `BETTER_AUTH_SECRET` — a long random string (run `openssl rand -hex 32`)
+- `BETTER_AUTH_URL` — your production URL (e.g. `https://myapp.com`)
+- `NEXT_PUBLIC_APP_URL` — same as above
+- Any OAuth client IDs and secrets
+- `NEXT_PUBLIC_POSTHOG_KEY` — if using PostHog
+- `NEXT_PUBLIC_SENTRY_DSN` — if using Sentry
+
+## Checking your deployment
+
+```bash
+# Check build output locally before deploying
+npm run build
+
+# Preview the production build locally
+npm run start
+```
+
+<Callout type="tip">
+  Vercel's **Preview Deployments** are one of its best features. Every branch and pull request gets a unique live URL. Share it with teammates for review without touching production.
+</Callout>

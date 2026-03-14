@@ -1,0 +1,106 @@
+---
+title: Middleware
+description: Run code before every request — auth guards, redirects, and more
+---
+
+# Middleware
+
+Middleware runs **before** a request is completed. It's perfect for auth redirects, A/B testing, locale detection, and rate limiting.
+
+## Creating middleware
+
+Create a `middleware.ts` file at the **root** of your project (same level as `app/`):
+
+```ts
+// middleware.ts
+import { NextRequest, NextResponse } from 'next/server';
+
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Example: redirect /old-blog to /blog
+  if (pathname.startsWith('/old-blog')) {
+    return NextResponse.redirect(new URL('/blog', request.url));
+  }
+
+  return NextResponse.next();
+}
+
+// Only run middleware on specific paths
+export const config = {
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico).*)',
+  ],
+};
+```
+
+## Auth protection middleware
+
+```ts
+// middleware.ts
+import { NextRequest, NextResponse } from 'next/server';
+
+const PUBLIC_PATHS = ['/', '/login', '/register', '/api/auth'];
+
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Allow public paths
+  if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
+    return NextResponse.next();
+  }
+
+  // Check for session cookie
+  const session = request.cookies.get('better-auth.session_token');
+
+  if (!session) {
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('callbackUrl', pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: ['/dashboard/:path*', '/settings/:path*', '/api/tasks/:path*'],
+};
+```
+
+## Reading and setting headers/cookies
+
+```ts
+export function middleware(request: NextRequest) {
+  const response = NextResponse.next();
+
+  // Add a custom header
+  response.headers.set('x-custom-header', 'hello');
+
+  // Set a cookie
+  response.cookies.set('visited', 'true', {
+    httpOnly: true,
+    maxAge: 60 * 60 * 24, // 1 day
+  });
+
+  return response;
+}
+```
+
+## The matcher config
+
+```ts
+export const config = {
+  matcher: [
+    // Match all paths except static files
+    '/((?!_next/static|_next/image|favicon.ico).*)',
+
+    // Only specific paths
+    '/dashboard/:path*',
+    '/api/:path*',
+  ],
+};
+```
+
+<Callout type="info">
+  Middleware runs on the Edge Runtime — a lightweight V8 environment. This means it's very fast but has limitations: no Node.js APIs, no direct database access, and limited npm package support. Keep middleware logic simple.
+</Callout>

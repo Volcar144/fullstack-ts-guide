@@ -1,0 +1,145 @@
+---
+title: Testing
+description: Unit tests, component tests, and end-to-end tests for your Next.js app
+---
+
+# Testing
+
+Testing gives you confidence that your code works — and keeps working as you change it. There are three levels of testing you'll use as a full-stack developer.
+
+## The three levels
+
+| Type | What it tests | Speed | Tools |
+|------|---------------|-------|-------|
+| **Unit** | A single function or hook | Very fast | Vitest |
+| **Component** | A React component in isolation | Fast | Vitest + React Testing Library |
+| **End-to-end** | The whole app in a real browser | Slow | Playwright |
+
+Start with unit and component tests. Add E2E tests for critical user flows.
+
+## Vitest (unit + component tests)
+
+```bash
+npm install -D vitest @vitejs/plugin-react @testing-library/react @testing-library/jest-dom jsdom
+```
+
+```ts
+// vitest.config.ts
+import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: ['./tests/setup.ts'],
+  },
+});
+```
+
+```ts
+// tests/setup.ts
+import '@testing-library/jest-dom';
+```
+
+## Writing unit tests
+
+```ts
+// lib/utils.test.ts
+import { describe, it, expect } from 'vitest';
+import { formatPrice, truncate } from './utils';
+
+describe('formatPrice', () => {
+  it('formats a number as GBP', () => {
+    expect(formatPrice(9.99)).toBe('\u00a39.99');
+  });
+
+  it('handles zero', () => {
+    expect(formatPrice(0)).toBe('\u00a30.00');
+  });
+});
+
+describe('truncate', () => {
+  it('truncates long strings', () => {
+    expect(truncate('Hello world', 5)).toBe('Hello...');
+  });
+
+  it('leaves short strings unchanged', () => {
+    expect(truncate('Hi', 10)).toBe('Hi');
+  });
+});
+```
+
+## Component tests
+
+```tsx
+// components/button.test.tsx
+import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { Button } from './ui/button';
+
+describe('Button', () => {
+  it('renders the label', () => {
+    render(<Button>Click me</Button>);
+    expect(screen.getByText('Click me')).toBeInTheDocument();
+  });
+
+  it('calls onClick when clicked', () => {
+    const handleClick = vi.fn();
+    render(<Button onClick={handleClick}>Click me</Button>);
+    fireEvent.click(screen.getByText('Click me'));
+    expect(handleClick).toHaveBeenCalledOnce();
+  });
+
+  it('is disabled when disabled prop is set', () => {
+    render(<Button disabled>Click me</Button>);
+    expect(screen.getByRole('button')).toBeDisabled();
+  });
+});
+```
+
+## End-to-end tests with Playwright
+
+```bash
+npm install -D @playwright/test
+npx playwright install
+```
+
+```ts
+// e2e/auth.spec.ts
+import { test, expect } from '@playwright/test';
+
+test('user can sign in', async ({ page }) => {
+  await page.goto('/login');
+
+  await page.fill('[name=email]', 'test@example.com');
+  await page.fill('[name=password]', 'password123');
+  await page.click('button[type=submit]');
+
+  // After login, should redirect to dashboard
+  await expect(page).toHaveURL('/dashboard');
+  await expect(page.getByText('My Tasks')).toBeVisible();
+});
+
+test('shows error on wrong password', async ({ page }) => {
+  await page.goto('/login');
+
+  await page.fill('[name=email]', 'test@example.com');
+  await page.fill('[name=password]', 'wrong');
+  await page.click('button[type=submit]');
+
+  await expect(page.getByText('Invalid credentials')).toBeVisible();
+});
+```
+
+Run tests:
+```bash
+npm run test          # vitest (unit + component)
+npx playwright test   # E2E
+npx playwright test --ui  # Playwright's visual test runner
+```
+
+<Callout type="tip">
+  A good rule of thumb: write tests for business logic (calculation functions, data transformations) and critical UI flows (login, checkout). Don't aim for 100% coverage — aim for confidence in the parts that matter most.
+</Callout>

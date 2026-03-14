@@ -1,0 +1,123 @@
+---
+title: shadcn/ui
+description: Beautiful, accessible components you own — not a dependency
+---
+
+# shadcn/ui
+
+shadcn/ui is not a component library you install as a dependency. Instead, you **copy components directly into your codebase**. You own the code and can modify it freely.
+
+## Why shadcn/ui?
+
+- **You own the code** — no black-box components, no version lock-in
+- **Accessible by default** — built on Radix UI primitives
+- **Tailwind-based** — fits perfectly with our stack
+- **Beautiful out of the box** — solid defaults, easy to customise
+
+## Installation
+
+```bash
+npx shadcn@latest init
+```
+
+You'll be asked about your project setup (TypeScript, Tailwind, etc.). It creates a `components/ui/` folder and a `components.json` config.
+
+## Adding components
+
+```bash
+npx shadcn@latest add button
+npx shadcn@latest add input
+npx shadcn@latest add card
+npx shadcn@latest add dialog
+npx shadcn@latest add dropdown-menu
+npx shadcn@latest add form        # includes react-hook-form integration
+npx shadcn@latest add toast
+npx shadcn@latest add table
+```
+
+## Using components
+
+```tsx
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+
+export function LoginCard() {
+  return (
+    <Card className="w-full max-w-sm">
+      <CardHeader>
+        <CardTitle>Sign In</CardTitle>
+        <CardDescription>Enter your email and password</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <Input type="email" placeholder="Email" />
+        <Input type="password" placeholder="Password" />
+      </CardContent>
+      <CardFooter>
+        <Button className="w-full">Sign In</Button>
+      </CardFooter>
+    </Card>
+  );
+}
+```
+
+## Dialog / Modal
+
+```tsx
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+
+export function ConfirmDeleteDialog({ onConfirm }: { onConfirm: () => void }) {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="destructive">Delete</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Are you sure?</DialogTitle>
+          <DialogDescription>
+            This action cannot be undone.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex justify-end gap-2 mt-4">
+          <Button variant="outline">Cancel</Button>
+          <Button variant="destructive" onClick={onConfirm}>Delete</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+```
+
+## Customising the theme
+
+Colors are defined as CSS variables in `app/globals.css`. Run `npx shadcn@latest add` and pick a theme, or edit the variables directly:
+
+```css
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --primary: 221.2 83.2% 53.3%;   /* change this to your brand colour */
+  --primary-foreground: 210 40% 98%;
+  --radius: 0.5rem;                /* border radius for all components */
+}
+```
+
+<Callout type="tip">
+  Browse all available components at [ui.shadcn.com](https://ui.shadcn.com). Every component has full usage docs and multiple variant examples.
+</Callout>

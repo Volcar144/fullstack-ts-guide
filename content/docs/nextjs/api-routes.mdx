@@ -1,0 +1,141 @@
+---
+title: API Routes
+description: Building your own REST API endpoints inside Next.js
+---
+
+# API Routes
+
+Next.js lets you create API endpoints inside your app using `route.ts` files. These are regular HTTP endpoints — you can call them from your frontend, from other services, or from mobile apps.
+
+## Creating an endpoint
+
+```ts
+// app/api/users/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/db';
+
+// GET /api/users
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const limit = Number(searchParams.get('limit') ?? 10);
+
+  const users = await db.user.findMany({
+    take: limit,
+    orderBy: { createdAt: 'desc' },
+    select: { id: true, name: true, email: true },
+  });
+
+  return NextResponse.json(users);
+}
+
+// POST /api/users
+export async function POST(request: NextRequest) {
+  const body = await request.json();
+
+  const user = await db.user.create({
+    data: {
+      name: body.name,
+      email: body.email,
+    },
+  });
+
+  return NextResponse.json(user, { status: 201 });
+}
+```
+
+## Dynamic route parameters
+
+```ts
+// app/api/users/[id]/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+
+interface Context {
+  params: Promise<{ id: string }>;
+}
+
+// GET /api/users/123
+export async function GET(request: NextRequest, { params }: Context) {
+  const { id } = await params;
+  const user = await db.user.findUnique({ where: { id } });
+
+  if (!user) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  return NextResponse.json(user);
+}
+
+// PATCH /api/users/123
+export async function PATCH(request: NextRequest, { params }: Context) {
+  const { id } = await params;
+  const body = await request.json();
+
+  const user = await db.user.update({
+    where: { id },
+    data: body,
+  });
+
+  return NextResponse.json(user);
+}
+
+// DELETE /api/users/123
+export async function DELETE(request: NextRequest, { params }: Context) {
+  const { id } = await params;
+  await db.user.delete({ where: { id } });
+  return new NextResponse(null, { status: 204 });
+}
+```
+
+## Adding auth protection
+
+```ts
+import { auth } from '@/lib/auth';
+import { headers } from 'next/headers';
+
+export async function GET(request: NextRequest) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const tasks = await db.task.findMany({
+    where: { userId: session.user.id },
+  });
+
+  return NextResponse.json(tasks);
+}
+```
+
+## Validation with Zod
+
+```ts
+import { z } from 'zod';
+
+const CreatePostSchema = z.object({
+  title: z.string().min(1).max(200),
+  content: z.string().min(1),
+  published: z.boolean().default(false),
+});
+
+export async function POST(request: NextRequest) {
+  const body = await request.json();
+  const result = CreatePostSchema.safeParse(body);
+
+  if (!result.success) {
+    return NextResponse.json(
+      { error: result.error.flatten() },
+      { status: 400 }
+    );
+  }
+
+  const post = await db.post.create({ data: result.data });
+  return NextResponse.json(post, { status: 201 });
+}
+```
+
+<Callout type="info">
+  For mutations triggered by your own UI, prefer **Server Actions** over API routes — they're simpler and more type-safe. API routes are better for endpoints consumed by external services, mobile apps, or third-party webhooks.
+</Callout>

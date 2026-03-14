@@ -1,0 +1,133 @@
+---
+title: Zod and Validation
+description: Schema validation for TypeScript — validate forms, API inputs and environment variables
+---
+
+# Zod and Validation
+
+Zod is a TypeScript-first schema validation library. It lets you define the exact shape of data and validate it at runtime, generating TypeScript types automatically.
+
+## Installation
+
+```bash
+npm install zod
+```
+
+## Basic schemas
+
+```ts
+import { z } from 'zod';
+
+// Primitives
+const nameSchema = z.string().min(1).max(100);
+const ageSchema = z.number().int().min(0).max(120);
+const emailSchema = z.string().email();
+const urlSchema = z.string().url();
+
+// Object
+const UserSchema = z.object({
+  id: z.string().cuid(),
+  name: z.string().min(2),
+  email: z.string().email(),
+  age: z.number().optional(),
+  role: z.enum(['admin', 'user', 'moderator']),
+  createdAt: z.date(),
+});
+
+// Infer TypeScript type — no duplication!
+type User = z.infer<typeof UserSchema>;
+```
+
+## Parsing and validating
+
+```ts
+// parse — throws on failure
+const user = UserSchema.parse(unknownData);
+
+// safeParse — returns { success, data } or { success, error }
+const result = UserSchema.safeParse(unknownData);
+
+if (result.success) {
+  console.log(result.data); // typed as User
+} else {
+  console.log(result.error.flatten());
+  // { fieldErrors: { name: ['too short'], email: ['invalid email'] } }
+}
+```
+
+## Common validators
+
+```ts
+z.string()
+  .min(8, 'At least 8 characters')
+  .max(100)
+  .regex(/[A-Z]/, 'Must contain uppercase')
+  .trim()                  // strip whitespace
+  .toLowerCase()           // normalise
+  .optional()              // can be undefined
+  .nullable()              // can be null
+  .default('guest')        // default if undefined
+
+z.number()
+  .int()
+  .positive()
+  .min(1)
+  .max(1000)
+
+z.array(z.string()).min(1).max(10)
+
+z.union([z.string(), z.number()])
+
+z.discriminatedUnion('type', [
+  z.object({ type: z.literal('email'), email: z.string().email() }),
+  z.object({ type: z.literal('phone'), phone: z.string() }),
+])
+```
+
+## Transformations
+
+```ts
+const FormSchema = z.object({
+  // coerce converts strings to numbers (useful for form data)
+  price: z.coerce.number().positive(),
+  date: z.coerce.date(),
+
+  // transform modifies the value
+  username: z.string().transform(s => s.toLowerCase().trim()),
+});
+```
+
+## API request validation
+
+```ts
+// app/api/posts/route.ts
+import { z } from 'zod';
+import { NextRequest, NextResponse } from 'next/server';
+
+const CreatePostSchema = z.object({
+  title: z.string().min(1).max(200),
+  content: z.string().min(10),
+  tags: z.array(z.string()).max(5).default([]),
+  published: z.boolean().default(false),
+});
+
+export async function POST(request: NextRequest) {
+  const body = await request.json();
+  const result = CreatePostSchema.safeParse(body);
+
+  if (!result.success) {
+    return NextResponse.json(
+      { errors: result.error.flatten().fieldErrors },
+      { status: 400 }
+    );
+  }
+
+  // result.data is fully typed
+  const post = await db.post.create({ data: result.data });
+  return NextResponse.json(post, { status: 201 });
+}
+```
+
+## Form validation with react-hook-form
+
+See the [Forms in React](/docs/react/forms) page for the full pattern — Zod + `@hookform/resolvers` is the standard approach.

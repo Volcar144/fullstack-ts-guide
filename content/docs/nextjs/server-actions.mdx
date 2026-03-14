@@ -1,0 +1,137 @@
+---
+title: Server Actions
+description: Run server code directly from forms and components — no API route needed
+---
+
+# Server Actions
+
+Server Actions let you define server-side functions that can be called directly from client components and forms. No separate API route needed.
+
+## Basic Server Action
+
+```tsx
+// app/tasks/actions.ts
+'use server'; // marks this entire file as server-only
+
+import { db } from '@/lib/db';
+import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
+import { z } from 'zod';
+
+const CreateTaskSchema = z.object({
+  title: z.string().min(1).max(200),
+});
+
+export async function createTask(formData: FormData) {
+  const result = CreateTaskSchema.safeParse({
+    title: formData.get('title'),
+  });
+
+  if (!result.success) {
+    return { error: result.error.flatten().fieldErrors };
+  }
+
+  await db.task.create({ data: result.data });
+
+  revalidatePath('/tasks'); // re-fetch server component data
+}
+
+export async function deleteTask(id: string) {
+  await db.task.delete({ where: { id } });
+  revalidatePath('/tasks');
+}
+
+export async function completeTask(id: string) {
+  await db.task.update({
+    where: { id },
+    data: { completed: true },
+  });
+  revalidatePath('/tasks');
+}
+```
+
+## Using in a form (no JavaScript required!)
+
+```tsx
+import { createTask } from './actions';
+
+export function CreateTaskForm() {
+  return (
+    <form action={createTask}>
+      <input
+        name="title"
+        placeholder="New task..."
+        required
+        className="border rounded px-3 py-2"
+      />
+      <button type="submit" className="ml-2 bg-blue-500 text-white px-4 py-2 rounded">
+        Add
+      </button>
+    </form>
+  );
+}
+```
+
+This works **even with JavaScript disabled** in the browser. The form submits to the server action directly.
+
+## Using with useActionState (with pending state)
+
+```tsx
+'use client';
+
+import { useActionState } from 'react';
+import { createTask } from './actions';
+
+export function CreateTaskForm() {
+  const [state, action, isPending] = useActionState(createTask, null);
+
+  return (
+    <form action={action}>
+      <input name="title" placeholder="New task..." required />
+      {state?.error && (
+        <p className="text-red-500 text-sm">{state.error.title?.[0]}</p>
+      )}
+      <button type="submit" disabled={isPending}>
+        {isPending ? 'Adding...' : 'Add Task'}
+      </button>
+    </form>
+  );
+}
+```
+
+## Calling Server Actions from buttons
+
+```tsx
+'use client';
+import { deleteTask } from './actions';
+
+export function DeleteButton({ id }: { id: string }) {
+  return (
+    <button
+      onClick={() => deleteTask(id)}
+      className="text-red-500 hover:text-red-700"
+    >
+      Delete
+    </button>
+  );
+}
+```
+
+## revalidatePath vs revalidateTag vs redirect
+
+```ts
+import { revalidatePath, revalidateTag, redirect } from 'next/cache';
+
+// Refetch data for a specific URL
+revalidatePath('/tasks');
+
+// Refetch all data tagged with 'tasks'
+revalidateTag('tasks');
+
+// Redirect after the action
+redirect('/dashboard');
+```
+
+<Callout type="tip">
+  Server Actions are the modern way to handle mutations in Next.js. They replace the need for POST API routes in most cases, and work beautifully with forms.
+</Callout>
